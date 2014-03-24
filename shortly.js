@@ -11,11 +11,15 @@ var Click = require('./app/models/click');
 
 var app = express();
 
+app.use(express.bodyParser());
+app.use(express.cookieParser('shhhh, very secret'));
+app.use(express.session());
+
 app.configure(function() {
   app.set('views', __dirname + '/views');
   app.set('view engine', 'ejs');
   app.use(partials());
-  app.use(express.bodyParser())
+  app.use(express.bodyParser());
   app.use(express.static(__dirname + '/public'));
 });
 
@@ -30,7 +34,7 @@ app.get('/create', function(req, res) {
 app.get('/links', function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
-  })
+  });
 });
 
 app.post('/links', function(req, res) {
@@ -69,7 +73,46 @@ app.post('/links', function(req, res) {
 /************************************************************/
 // Write your authentication routes here
 /************************************************************/
+app.get('/login', function(req,res){
+   res.render('login');
+});
 
+app.get('/signup', function(req, res) {
+  res.render('signup');
+});
+app.post('/signup', function(req, res) {
+  var aUser = new User({
+    'username':req.body.username, 
+    'password':req.body.password});
+  
+});
+
+app.get('/restricted', function(req, res) {
+  res.render('index');
+});
+
+app.post('/login', function(req, res) {
+  var aUser = new User({
+    'username':req.body.username, 
+    'password':req.body.password});
+  aUser.isValid(
+    function(){ // error callback
+      console.log("failed login attempt");
+      res.redirect('login');
+    }, 
+    function(){ // success callback
+      req.session.regenerate(function(){
+        req.session.user = aUser.username;
+        res.redirect('/restricted');
+      });
+  });
+});
+
+app.get('/logout', function(req,res){
+  req.session.destroy(function(){
+    res.redirect('/');
+  });
+});
 
 
 /************************************************************/
@@ -81,7 +124,7 @@ app.post('/links', function(req, res) {
 app.get('/*', function(req, res) {
   new Link({ code: req.params[0] }).fetch().then(function(link) {
     if (!link) {
-      res.redirect('/');
+      res.redirect('/login');
     } else {
       var click = new Click({
         link_id: link.get('id')
@@ -91,7 +134,7 @@ app.get('/*', function(req, res) {
         db.knex('urls')
           .where('code', '=', link.get('code'))
           .update({
-            visits: link.get('visits') + 1,
+            visits: link.get('visits') + 1
           }).then(function() {
             return res.redirect(link.get('url'));
           });

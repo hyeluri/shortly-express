@@ -24,23 +24,24 @@ app.configure(function() {
   app.use(express.static(__dirname + '/public'));
 });
 
-app.get('/', function(req, res) {
+var checkUser = function(req,res,next){
   console.log(req.session.isValid);
   if(req.session.isValid){
-    res.render('index');
+    next();
   }else{
-    res.render('login');
+    res.redirect('/login');
   }
+};
 
-  console.log(req.session);
+app.get('/', checkUser, function(req, res) {
+    res.render('index');
 });
 
-app.get('/create', function(req, res) {
-  // IF has valid session
-  res.render('index');
+app.get('/create', checkUser, function(req, res) {
+    res.render('index');
 });
 
-app.get('/links', function(req, res) {
+app.get('/links', checkUser, function(req, res) {
   Links.reset().fetch().then(function(links) {
     res.send(200, links.models);
   });
@@ -104,10 +105,6 @@ app.post('/signup', function(req, res) {
       //User.add(newUser);
       res.send(200, newUser);
     });
-});
-
-app.get('/restricted', function(req, res) {
-  res.render('index');
 });
 
 app.post('/login', function(req, res) {

@@ -8,12 +8,13 @@ var User = require('./app/models/user');
 var Links = require('./app/collections/links');
 var Link = require('./app/models/link');
 var Click = require('./app/models/click');
+var store  = new express.session.MemoryStore();
 
 var app = express();
 
 app.use(express.bodyParser());
-app.use(express.cookieParser('shhhh, very secret'));
-app.use(express.session());
+app.use(express.cookieParser());
+app.use(express.session({secret: 'shhhh, very secret', 'key': 'theKey', store: store}));
 
 app.configure(function() {
   app.set('views', __dirname + '/views');
@@ -24,10 +25,18 @@ app.configure(function() {
 });
 
 app.get('/', function(req, res) {
-  res.render('index');
+  console.log(req.session.isValid);
+  if(req.session.isValid){
+    res.render('index');
+  }else{
+    res.render('login');
+  }
+
+  console.log(req.session);
 });
 
 app.get('/create', function(req, res) {
+  // IF has valid session
   res.render('index');
 });
 
@@ -108,12 +117,14 @@ app.post('/login', function(req, res) {
   aUser.isValid(req.body.password,
     function(){ // error callback
       console.log("failed login attempt");
+      req.session.isValid = true;
       res.redirect('login');
     },
     function(){ // success callback
       req.session.regenerate(function(){
         req.session.user = aUser.username;
-        res.redirect('/restricted');
+        req.session.isValid = true;
+        res.redirect('/');
       });
   });
 });

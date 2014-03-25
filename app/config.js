@@ -48,11 +48,10 @@ db.knex.schema.hasTable('clicks').then(function(exists) {
 /************************************************************/
 // CREATE TABLE "users" ("id" integer primary key autoincrement not null, "username" varchar(100), "password" varchar(100), "created_at" datetime, "updated_at" datetime);
 // CREATE UNIQUE INDEX users_username_unique on "users" ("username");
-db.knex.schema.hasTable('users2').then(function(exists) {
+db.knex.schema.hasTable('users').then(function(exists) {
   if (!exists) {
-    db.knex.schema.createTable('users2', function (user) {
+    db.knex.schema.createTable('users', function (user) {
       user.increments('id').primary();
-      // user.integer('link_id');
       user.string('username', 100);
       user.string('password', 100);
       user.timestamps();

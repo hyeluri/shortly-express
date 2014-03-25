@@ -80,11 +80,21 @@ app.get('/login', function(req,res){
 app.get('/signup', function(req, res) {
   res.render('signup');
 });
+
 app.post('/signup', function(req, res) {
-  var aUser = new User({
-    'username':req.body.username, 
-    'password':req.body.password});
-  
+  var json = { username: req.body.username, password: req.body.password };
+  User.forge(json)
+    .fetch()
+    .then(function(found) {
+      if (found) {
+        res.send(200, found.attributes);// ????
+      } else {
+        return User.forge(json).save();
+      }
+    }).then(function(newUser) {
+      //User.add(newUser);
+      res.send(200, newUser);
+    });
 });
 
 app.get('/restricted', function(req, res) {
@@ -93,13 +103,13 @@ app.get('/restricted', function(req, res) {
 
 app.post('/login', function(req, res) {
   var aUser = new User({
-    'username':req.body.username, 
+    'username':req.body.username,
     'password':req.body.password});
-  aUser.isValid(
+  aUser.isValid(req.body.password,
     function(){ // error callback
       console.log("failed login attempt");
       res.redirect('login');
-    }, 
+    },
     function(){ // success callback
       req.session.regenerate(function(){
         req.session.user = aUser.username;

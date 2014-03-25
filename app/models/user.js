@@ -4,18 +4,24 @@ var Promise = require('bluebird');
 
 var User = db.Model.extend({
   tableName:'users',
+  hasTimestamps: true,
   initialize: function(params){
     this.set('username', params['username']);
-    this.set('password', params['password']);
+    var hash = bcrypt.hashSync(params['password']);
+    this.set('password', hash);
   },
-  isValid:function(errCallback, okCallback){
-    var salt = bcrypt.genSaltSync(10); // 10 rounds to process the data
-    var hash = bcrypt.hashSync(this.password, salt);
+  isValid:function(password, errCallback, okCallback){
     this.query()
-      .where({'username': this.get('username'), 'password':hash})
+      .where({'username': this.get('username')})
       .then(function(model){
+        console.log("model length:", model);
         if(model.length === 1){
-          okCallback(model);
+          bcrypt.compare(password, model[0].password, function(err, res){
+            console.log("@User.isValid? res" + res);
+            if(res){
+              okCallback(model);
+            }
+          });
         } else {
           errCallback(model);
         }
